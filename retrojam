@@ -10,10 +10,22 @@ NOTESWITHFLATS=(A Bb B C Db D Eb E F Gb G Ab)
 NOTESWITHSHARPS=(A A# B C C# D D# E F F# G G#)
 
 # Tunings
+TUNING_PREFIX=Tuning_
 DEFAULTTUNING=Standard
-TUNINGS=(Standard DropD)
+TUNINGS=(\
+  Standard\
+  "Drop D"\
+)
 
 # Scales
+SCALE_PREFIX=Scale_
+DEFAULTSCALE="A Minor Pentatonic"
+SCALES=(\
+  "A Minor Pentatonic"\
+  "A Major Pentatonic"
+)
+Scale_A_Minor_Pentatonic=( A C D E G )
+Scale_A_Major_Pentatonic=( A B C# E F# )
 
 # Generate default config if needed
 CONFIGFILE="$HOME/.config/retrojam/config"
@@ -24,6 +36,7 @@ fi
 if [ ! -f $CONFIGFILE ]; then
   cat <<EOF > $CONFIGFILE
 SHARPFLATDISPLAY=Sharps
+CURRENTSCALE=A Minor Pentatonic
 TUNING=$DEFAULTTUNING
 EOF
 fi
@@ -31,8 +44,8 @@ fi
 function retune_menu {
   clear
   PS3="Enter the number for your desired tuning: "
-  select tuning in "${TUNINGS[@]}"; do
-    sed -i "s/^TUNING=.*/TUNING=$tuning/" $CONFIGFILE
+  select tuning_choice in "${TUNINGS[@]}"; do
+    sed -i "s/^TUNING=.*/TUNING=$tuning_choice/" $CONFIGFILE
     break
   done
 }
@@ -45,7 +58,22 @@ function choose_notes {
     NOTES="${NOTESWITHFLATS[@]}"
   fi
 }
-  
+
+function scale_menu {
+  clear
+  PS3="Enter the number for your desired scale: "
+  select scale_choice in "${SCALES[@]}"; do
+    sed -i "s/^CURRENTSCALE=.*/CURRENTSCALE=$scale_choice/" $CONFIGFILE
+    break
+  done
+}
+
+function translate_scale {
+  sharpflatdisplay=`grep ^SHARPFLATDISPLAY $CONFIGFILE | sed 's/.*=//'`
+  if [[ "$sharpflatdisplay" = "Flats" ]]; then
+    echo $1
+  fi
+}
 
 function main_menu {
   clear
@@ -58,22 +86,53 @@ function main_menu {
 ██║  ██║███████╗   ██║   ██║  ██║╚██████╔╝╚█████╔╝██║  ██║██║ ╚═╝ ██║
 ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝  ╚════╝ ╚═╝  ╚═╝╚═╝     ╚═╝"
 
-  TUNING=`grep ^TUNING $CONFIGFILE | sed 's/.*=//'`
+  tuning=`grep ^TUNING $CONFIGFILE | sed 's/.*=//'`
   sharpflatdisplay=`grep ^SHARPFLATDISPLAY $CONFIGFILE | sed 's/.*=//'`
-  echo $NOTES
-  echo "Your currently selected tuning is $TUNING."
+  scale=`grep ^CURRENTSCALE $CONFIGFILE | sed 's/.*=//'`
+  scale_suffix=`echo $scale | tr ' ' '_'`
+  eval scale_alias=( \"\${${SCALE_PREFIX}${scale_suffix}[@]}\" )
+
+  if [[ $sharpflatdisplay = Flats ]]; then
+    scale_index=0
+    for scale_note in ${scale_alias[@]}; do
+      echo $scale_note | grep '#' > /dev/null
+      if [ $? -eq 0 ]; then
+        index=0
+        for val in ${NOTESWITHSHARPS[@]}; do
+          if [[ "$val" = "$scale_note" ]]; then
+            scale_alias[$scale_index]="${NOTESWITHFLATS[$index]}"
+          fi
+          index=$((index+1))
+        done
+      fi
+      scale_index=$((scale_index+1))
+    done
+  fi
+  
+  echo "Your currently selected scale is $scale (${scale_alias[@]})"
+  echo "Your currently selected tuning is $tuning."
 
   PS3="Enter the number for your menu selection: "
-  select choice in Play Retune "Toggle: Show Sharp or Flat Notes: $sharpflatdisplay ($NOTES)" Quit; do
+  select choice in \
+    Play\
+    "Change Scale"\
+    Retune\
+    "Toggle: Show Sharp or Flat Notes. Currently showing $sharpflatdisplay ($NOTES)"\
+    Quit; do
+
     case $choice in
       Play)
+        break
+        ;;
+      "Change Scale") 
+	scale_menu
 	break
         ;;
       Retune)
         retune_menu
 	break
         ;;
-"Toggle: Show Sharp or Flat Notes: $sharpflatdisplay ($NOTES)")
+"Toggle: Show Sharp or Flat Notes. Currently showing $sharpflatdisplay ($NOTES)")
         if [[ "$sharpflatdisplay" = "Sharps" ]]; then 
 	  sharpflatdisplay="Flats"
 	else
