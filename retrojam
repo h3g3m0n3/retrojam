@@ -109,9 +109,13 @@ function main_menu {
     done
   fi
   
+  echo ""
   echo "Your currently selected scale is $scale (${scale_alias[@]})"
   echo "Your currently selected tuning is $tuning."
+  echo ""
 
+  echo "Main menu"
+  echo "========="
   PS3="Enter the number for your menu selection: "
   select choice in \
     Play\
