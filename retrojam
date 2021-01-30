@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# Comment out this block if you're a sillyhead
+if [[ $EUID -eq 0 ]]; then
+  echo "Why are you running me as root, sillyhead?"
+  exit 2
+fi
+
+# Generate default config if needed
+CONFIGFILE="$HOME/.config/retrojam/config"
+CONFIGDIR=`dirname $CONFIGFILE`
+if [ ! -d $CONFIGDIR ]; then
+  mkdir -p $CONFIGDIR
+fi
+if [ ! -f $CONFIGFILE ]; then
+  cat <<"EOF" > $CONFIGFILE
+TUNING=E
+EOF
+fi
+
+function retune_menu {
+  clear
+  PS3="Enter the number for your menu selection: "
+  select tuning in E DropD; do
+    sed -i "s/^TUNING=.*/TUNING=$tuning/" $CONFIGFILE
+    break
+  done
+}
+
+function main_menu {
+  clear
+  echo "\
+
+██████╗ ███████╗████████╗██████╗  ██████╗      ██╗ █████╗ ███╗   ███╗
+██╔══██╗██╔════╝╚══██╔══╝██╔══██╗██╔═══██╗     ██║██╔══██╗████╗ ████║
+██████╔╝█████╗     ██║   ██████╔╝██║   ██║     ██║███████║██╔████╔██║
+██╔══██╗██╔══╝     ██║   ██╔══██╗██║   ██║██   ██║██╔══██║██║╚██╔╝██║
+██║  ██║███████╗   ██║   ██║  ██║╚██████╔╝╚█████╔╝██║  ██║██║ ╚═╝ ██║
+╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝  ╚════╝ ╚═╝  ╚═╝╚═╝     ╚═╝"
+
+  TUNING=`grep ^TUNING $CONFIGFILE | sed 's/.*=//'`
+  echo "Your currently selected tuning is $TUNING." 
+
+  PS3="Enter the number for your menu selection: "
+  select choice in Play Retune Quit; do
+    case $choice in
+      Play)
+	break
+        ;;
+      Retune)
+        retune_menu
+	break
+        ;;
+      Quit)
+        exit 0
+        ;;
+      *)
+        echo "Invalid option $REPLY"
+        ;;
+    esac
+  done
+}
+
+while : ;do
+  main_menu
+done
