@@ -6,6 +6,15 @@ if [[ $EUID -eq 0 ]]; then
   exit 2
 fi
 
+NOTESWITHFLATS=(A Bb B C Db D Eb E F Gb G Ab)
+NOTESWITHSHARPS=(A A# B C C# D D# E F F# G G#)
+
+# Tunings
+DEFAULTTUNING=Standard
+TUNINGS=(Standard DropD)
+
+# Scales
+
 # Generate default config if needed
 CONFIGFILE="$HOME/.config/retrojam/config"
 CONFIGDIR=`dirname $CONFIGFILE`
@@ -13,19 +22,30 @@ if [ ! -d $CONFIGDIR ]; then
   mkdir -p $CONFIGDIR
 fi
 if [ ! -f $CONFIGFILE ]; then
-  cat <<"EOF" > $CONFIGFILE
-TUNING=E
+  cat <<EOF > $CONFIGFILE
+SHARPFLATDISPLAY=Sharps
+TUNING=$DEFAULTTUNING
 EOF
 fi
 
 function retune_menu {
   clear
-  PS3="Enter the number for your menu selection: "
-  select tuning in E DropD; do
+  PS3="Enter the number for your desired tuning: "
+  select tuning in "${TUNINGS[@]}"; do
     sed -i "s/^TUNING=.*/TUNING=$tuning/" $CONFIGFILE
     break
   done
 }
+
+function choose_notes {
+  sharpflatdisplay=`grep ^SHARPFLATDISPLAY $CONFIGFILE | sed 's/.*=//'`
+  if [[ "$sharpflatdisplay" = "Sharps" ]]; then
+    NOTES="${NOTESWITHSHARPS[@]}"
+  else
+    NOTES="${NOTESWITHFLATS[@]}"
+  fi
+}
+  
 
 function main_menu {
   clear
@@ -39,10 +59,12 @@ function main_menu {
 ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝  ╚════╝ ╚═╝  ╚═╝╚═╝     ╚═╝"
 
   TUNING=`grep ^TUNING $CONFIGFILE | sed 's/.*=//'`
-  echo "Your currently selected tuning is $TUNING." 
+  sharpflatdisplay=`grep ^SHARPFLATDISPLAY $CONFIGFILE | sed 's/.*=//'`
+  echo $NOTES
+  echo "Your currently selected tuning is $TUNING."
 
   PS3="Enter the number for your menu selection: "
-  select choice in Play Retune Quit; do
+  select choice in Play Retune "Toggle: Show Sharp or Flat Notes: $sharpflatdisplay ($NOTES)" Quit; do
     case $choice in
       Play)
 	break
@@ -51,6 +73,17 @@ function main_menu {
         retune_menu
 	break
         ;;
+"Toggle: Show Sharp or Flat Notes: $sharpflatdisplay ($NOTES)")
+        if [[ "$sharpflatdisplay" = "Sharps" ]]; then 
+	  sharpflatdisplay="Flats"
+	else
+	  sharpflatdisplay="Sharps"
+	fi
+        sed -i "s/^SHARPFLATDISPLAY=.*/SHARPFLATDISPLAY=$sharpflatdisplay/" $CONFIGFILE 2> /tmp/b
+	choose_notes
+	echo $NOTES > /tmp/a
+	break
+	;;
       Quit)
         exit 0
         ;;
@@ -61,6 +94,7 @@ function main_menu {
   done
 }
 
+choose_notes
 while : ;do
   main_menu
 done
