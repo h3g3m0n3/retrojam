@@ -73,28 +73,14 @@ function scale_type_menu {
   done
 }
 
-function translate_scale {
-  sharpflatdisplay=`grep ^SHARPFLATDISPLAY $CONFIGFILE | sed 's/.*=//'`
-  if [[ "$sharpflatdisplay" = "Flats" ]]; then
-    echo $1
-  fi
-}
-
 function root_note_menu {
   clear
+  choose_notes
   PS3="Enter the number for your desired root note: "
-  sharpflatdisplay=`grep ^SHARPFLATDISPLAY $CONFIGFILE | sed 's/.*=//'`
-  if [[ $sharpflatdisplay = "Sharps" ]]; then
-    select root_note_choice in "${NOTESWITHSHARPS[@]}"; do
-      sed -i "s/^ROOTNOTE=.*/ROOTNOTE=$root_note_choice/" $CONFIGFILE
-      break
-    done
-  else
-    select root_note_choice in "${NOTESWITHFLATS[@]}"; do
-      sed -i "s/^ROOTNOTE=.*/ROOTNOTE=$root_note_choice/" $CONFIGFILE
-      break
-    done
-  fi
+  select root_note_choice in "${NOTES[@]}"; do
+    sed -i "s/^ROOTNOTE=.*/ROOTNOTE=$root_note_choice/" $CONFIGFILE
+    break
+  done
 }
   
 function main_menu {
