@@ -17,15 +17,19 @@ TUNINGS=(\
   "Drop D"\
 )
 
-# Scales
-SCALE_PREFIX=Scale_
-DEFAULTSCALE="A Minor Pentatonic"
-SCALES=(\
-  "A Minor Pentatonic"\
-  "A Major Pentatonic"
+# Root Notes
+DEFAULTROOTNOTE=C
+
+# Scale Types
+DEFAULTSCALETYPE="Major"
+SCALETYPES=(\
+  "Major (Ionian)"
+  "Major Pentatonic"
+  "Minor Pentatonic"\
 )
-Scale_A_Minor_Pentatonic=( A C D E G )
-Scale_A_Major_Pentatonic=( A B C# E F# )
+C_Major=( C D E F G A B )
+A_Minor_Pentatonic=( A C D E G )
+A_Major_Pentatonic=( A B C# E F# )
 
 # Generate default config if needed
 CONFIGFILE="$HOME/.config/retrojam/config"
@@ -35,8 +39,9 @@ if [ ! -d $CONFIGDIR ]; then
 fi
 if [ ! -f $CONFIGFILE ]; then
   cat <<EOF > $CONFIGFILE
+ROOTNOTE=$DEFAULTROOTNOTE
+SCALETYPE=$DEFAULTSCALETYPE
 SHARPFLATDISPLAY=Sharps
-CURRENTSCALE=A Minor Pentatonic
 TUNING=$DEFAULTTUNING
 EOF
 fi
@@ -59,11 +64,11 @@ function choose_notes {
   fi
 }
 
-function scale_menu {
+function scale_type_menu {
   clear
-  PS3="Enter the number for your desired scale: "
-  select scale_choice in "${SCALES[@]}"; do
-    sed -i "s/^CURRENTSCALE=.*/CURRENTSCALE=$scale_choice/" $CONFIGFILE
+  PS3="Enter the number for your desired scale type: "
+  select scale_type_choice in "${SCALETYPES[@]}"; do
+    sed -i "s/^SCALETYPE=.*/SCALETYPE=$scale_type_choice/" $CONFIGFILE
     break
   done
 }
@@ -75,6 +80,23 @@ function translate_scale {
   fi
 }
 
+function root_note_menu {
+  clear
+  PS3="Enter the number for your desired root note: "
+  sharpflatdisplay=`grep ^SHARPFLATDISPLAY $CONFIGFILE | sed 's/.*=//'`
+  if [[ $sharpflatdisplay = "Sharps" ]]; then
+    select root_note_choice in "${NOTESWITHSHARPS[@]}"; do
+      sed -i "s/^ROOTNOTE=.*/ROOTNOTE=$root_note_choice/" $CONFIGFILE
+      break
+    done
+  else
+    select root_note_choice in "${NOTESWITHFLATS[@]}"; do
+      sed -i "s/^ROOTNOTE=.*/ROOTNOTE=$root_note_choice/" $CONFIGFILE
+      break
+    done
+  fi
+}
+  
 function main_menu {
   clear
   echo "\
@@ -87,11 +109,13 @@ function main_menu {
 ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝  ╚════╝ ╚═╝  ╚═╝╚═╝     ╚═╝"
 
   tuning=`grep ^TUNING $CONFIGFILE | sed 's/.*=//'`
+  rootnote=`grep ^ROOTNOTE $CONFIGFILE | sed 's/.*=//'`
   sharpflatdisplay=`grep ^SHARPFLATDISPLAY $CONFIGFILE | sed 's/.*=//'`
-  scale=`grep ^CURRENTSCALE $CONFIGFILE | sed 's/.*=//'`
-  scale_suffix=`echo $scale | tr ' ' '_'`
-  eval scale_alias=( \"\${${SCALE_PREFIX}${scale_suffix}[@]}\" )
+  scaletype=`grep ^SCALETYPE $CONFIGFILE | sed 's/.*=//'`
+  scale_suffix=`echo $scaletype | tr ' ' '_' | sed 's/(.*//'`
 
+  eval scale_alias=( \"\${${rootnote}_${scale_suffix}[@]}\" )
+  
   if [[ $sharpflatdisplay = Flats ]]; then
     scale_index=0
     for scale_note in ${scale_alias[@]}; do
@@ -110,8 +134,11 @@ function main_menu {
   fi
   
   echo ""
-  echo "Your currently selected scale is $scale (${scale_alias[@]})"
-  echo "Your currently selected tuning is $tuning."
+  echo "Current Settings:"
+  echo "================="
+  echo "Root Note: $rootnote"
+  echo "Scale Type: $scaletype (${scale_alias[@]})"
+  echo "Tuning: $tuning"
   echo ""
 
   echo "Main menu"
@@ -119,7 +146,8 @@ function main_menu {
   PS3="Enter the number for your menu selection: "
   select choice in \
     Play\
-    "Change Scale"\
+    "Change Root Note"\
+    "Change Scale Type"\
     Retune\
     "Toggle: Show Sharp or Flat Notes. Currently showing $sharpflatdisplay ($NOTES)"\
     Quit; do
@@ -128,8 +156,12 @@ function main_menu {
       Play)
         break
         ;;
-      "Change Scale") 
-	scale_menu
+      "Change Root Note")
+        root_note_menu
+        break
+        ;;
+      "Change Scale Type") 
+	scale_type_menu
 	break
         ;;
       Retune)
@@ -139,12 +171,40 @@ function main_menu {
 "Toggle: Show Sharp or Flat Notes. Currently showing $sharpflatdisplay ($NOTES)")
         if [[ "$sharpflatdisplay" = "Sharps" ]]; then 
 	  sharpflatdisplay="Flats"
+
 	else
 	  sharpflatdisplay="Sharps"
 	fi
         sed -i "s/^SHARPFLATDISPLAY=.*/SHARPFLATDISPLAY=$sharpflatdisplay/" $CONFIGFILE 2> /tmp/b
 	choose_notes
-	echo $NOTES > /tmp/a
+
+	# Translate flat root note to sharp
+        echo $rootnote | grep 'b' > /dev/null
+	if [ $? -eq 0 ]; then
+          index=0
+          for val in ${NOTESWITHFLATS[@]}; do
+            if [[ "$val" = "$rootnote" ]]; then
+              rootnote="${NOTESWITHSHARPS[$index]}"
+	      sed -i 's/^ROOTNOTE=.*/ROOTNOTE=$rootnote/' $CONFIGFILE
+	      break
+	    fi
+            index=$((index+1))   
+	  done
+	fi
+	
+	# Translate sharp root note to flat
+        echo $rootnote | grep '#' > /dev/null
+	if [ $? -eq 0 ]; then
+          index=0
+          for val in ${NOTESWITHSHARPS[@]}; do
+            if [[ "$val" = "$rootnote" ]]; then
+              rootnote="${NOTESWITHFLATS[$index]}"
+	      sed -i 's/^ROOTNOTE=.*/ROOTNOTE=$rootnote/' $CONFIGFILE
+	      break
+	    fi
+            index=$((index+1))   
+	  done
+	fi
 	break
 	;;
       Quit)
