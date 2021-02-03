@@ -25,9 +25,13 @@ DEFAULTSCALETYPE="Major"
 SCALETYPES=(\
   "Major"
   "Minor"
+  "Major Pentatonic"
+  "Minor Pentatonic"
 )
 Major=(2 2 1 2 2 2 1)
 Minor=(2 1 2 2 1 2 2)
+Major_Pentatonic=(2 2 3 2)
+Minor_Pentatonic=(3 2 2 3)
 
 function generate_scale {
   scaletype="$1"
@@ -166,7 +170,6 @@ function main_menu {
   rootnote=`grep ^ROOTNOTE $CONFIGFILE | sed 's/.*=//'`
   sharpflatdisplay=`grep ^SHARPFLATDISPLAY $CONFIGFILE | sed 's/.*=//'`
   scaletype=`grep ^SCALETYPE $CONFIGFILE | sed 's/.*=//'`
-  generate_scale "$rootnote" "$scaletype"
 
   echo ""
   echo "Current Settings:"
@@ -174,6 +177,8 @@ function main_menu {
   echo "Tuning: $tuning"
   echo "Root Note: $rootnote"
   echo "Scale Type: $scaletype"
+  scaletype=`echo $scaletype | tr ' ' '_'`
+  generate_scale "$rootnote" "$scaletype"
   echo "Scale Notes: ${scale[@]}"
   echo ""
 
@@ -240,8 +245,8 @@ function main_menu {
 	    fi
             index=$((index+1))   
 	  done
-    	  break
 	fi
+    	break
 	;;
       Quit)
         exit 0
