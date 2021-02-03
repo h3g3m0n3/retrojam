@@ -114,18 +114,47 @@ function show_fretboard {
   echo "Showing notes for $rootnote $dispscaletype:"
   echo ""
   line=""
-  echo "0 |-------1|-------2|-------3|-------4|-------5|-------6|-------7|-------8|-------9|------10|------11|"
+  echo "0 |-------1|-------2|-------3|-------4|-------5|-------6|-------7|-------8|-------9|------10|------11|------"
   echo ""
   for string in ${tuning_alias[@]}; do
     echo "$string" | grep '#|b' > /dev/null
     if [ $? -eq 0 ]; then
-      line="$string|--"
+      line="$string|------"
     else
-      line="$string |--"
+      line="$string |------"
     fi
+    # Get index of the string's 0 fret in NOTES
+    note_index=0
+    for note in "${NOTES[@]}"; do
+      if [[ "$note" = "$string" ]]; then
+        break
+      fi
+      note_index=$((note_index+1))
+    done
+    # Increment once to get to fret 1
+    note_index=$((note_index+1))
+
+    fret_index=1
+    while [[ "$fret_index" -lt 12 ]]; do
+      note="${NOTES[$note_index]}"
+      dispnote="--"
+      if [[ " ${scale[@]} " =~ "$note" ]]; then 
+        echo "$note" | grep '#|b' > /dev/null
+	if [ $? -eq 0 ]; then
+          dispnote="$note"
+	else
+	  dispnote="-$note"
+	fi
+      fi
+      line="$line$dispnote|------"
+      fret_index=$((fret_index+1))
+      note_index=$((note_index+1))
+      if [[ "$note_index" -gt 11 ]]; then
+        note_index=$((note_index-12))
+      fi
+    done
     echo "$line"
   done
-  echo '<Fretboard placeholder>'
   echo ""
   read -p "Press any key to return to the main menu."
 }
