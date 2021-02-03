@@ -141,7 +141,6 @@ function show_fretboard {
       if [[ " ${scale[@]} " =~ "$note" ]]; then 
         echo "$note" | grep '#\|b' > /dev/null
 	if [ $? -eq 0 ]; then
-          echo "$note" >> /tmp/a
           dispnote="$note"
 	else
 	  dispnote="-$note"
