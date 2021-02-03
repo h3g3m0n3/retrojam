@@ -27,9 +27,72 @@ SCALETYPES=(\
   "Major Pentatonic"
   "Minor Pentatonic"\
 )
-C_Major=( C D E F G A B )
-A_Minor_Pentatonic=( A C D E G )
-A_Major_Pentatonic=( A B C# E F# )
+Major=(2 2 1 2 2 2 1)
+
+function generate_scale {
+  scaletype="$1"
+  rootnote="$2"
+  
+  eval scale_alias=( \"\${${scaletype}[@]}\" )
+  sharpflatdisplay=`grep ^SHARPFLATDISPLAY $CONFIGFILE | sed 's/.*=//'`
+  if [[ "$sharpflatdisplay" = "Sharps" ]]; then
+    NOTES="${NOTESWITHSHARPS[@]}"
+  else
+    NOTES="${NOTESWITHFLATS[@]}"
+  fi
+  note_index=0
+  # Get index of root note
+  for note in ${NOTES[@]}; do
+    if [[ "$note" = "$rootnote" ]]; then
+      root_index=$note_index
+    fi
+  note_index=$((note_index+1))
+  done
+  for movement in ${scale_alias[@]}; do
+    cur_index=$((note_index+movement))
+    if [[ "$cur_index" -gt 11 ]]; then
+      cur_index=$((cur_index-12))
+    fi 
+    echo "${NOTES[$cur_index]}"
+  done
+}
+
+function generate_scale {
+  NOTES=()
+  rootnote="$1"
+  scaletype="$2"
+  scale=("$rootnote")
+  eval scale_alias=( \"\${${scaletype}[@]}\" )
+  sharpflatdisplay=`grep ^SHARPFLATDISPLAY $CONFIGFILE | sed 's/.*=//'`
+  if [[ "$sharpflatdisplay" = "Sharps" ]]; then
+    for note in ${NOTESWITHSHARPS[@]}; do
+      NOTES+=("$note")
+    done
+  else
+    for note in ${NOTESWITHFLATS[@]}; do
+      NOTES+=("$note")
+    done
+  fi
+  note_index=0
+  # Get index of root note
+  for note in ${NOTES[@]}; do
+    if [[ "$note" = "$rootnote" ]]; then
+      root_index=$note_index
+    fi
+  note_index=$((note_index+1))
+  done
+  cur_index=$root_index
+  for movement in ${scale_alias[@]}; do
+    cur_index=$((cur_index+movement))
+    if [[ "$cur_index" -gt 11 ]]; then
+      cur_index=$((cur_index-12))
+    fi
+    if [[ "$cur_index" = "$root_index" ]]; then
+      break
+    fi
+    scale+=("${NOTES[$cur_index]}")
+  done
+}
 
 # Generate default config if needed
 CONFIGFILE="$HOME/.config/retrojam/config"
@@ -56,11 +119,16 @@ function retune_menu {
 }
 
 function choose_notes {
+  NOTES=()
   sharpflatdisplay=`grep ^SHARPFLATDISPLAY $CONFIGFILE | sed 's/.*=//'`
   if [[ "$sharpflatdisplay" = "Sharps" ]]; then
-    NOTES="${NOTESWITHSHARPS[@]}"
+    for note in ${NOTESWITHSHARPS[@]}; do
+      NOTES+=("$note")
+    done
   else
-    NOTES="${NOTESWITHFLATS[@]}"
+    for note in ${NOTESWITHFLATS[@]}; do
+      NOTES+=("$note")
+    done
   fi
 }
 
@@ -98,33 +166,16 @@ function main_menu {
   rootnote=`grep ^ROOTNOTE $CONFIGFILE | sed 's/.*=//'`
   sharpflatdisplay=`grep ^SHARPFLATDISPLAY $CONFIGFILE | sed 's/.*=//'`
   scaletype=`grep ^SCALETYPE $CONFIGFILE | sed 's/.*=//'`
+  generate_scale "$rootnote" "$scaletype"
   scale_suffix=`echo $scaletype | tr ' ' '_' | sed 's/(.*//'`
 
-  eval scale_alias=( \"\${${rootnote}_${scale_suffix}[@]}\" )
-  
-  if [[ $sharpflatdisplay = Flats ]]; then
-    scale_index=0
-    for scale_note in ${scale_alias[@]}; do
-      echo $scale_note | grep '#' > /dev/null
-      if [ $? -eq 0 ]; then
-        index=0
-        for val in ${NOTESWITHSHARPS[@]}; do
-          if [[ "$val" = "$scale_note" ]]; then
-            scale_alias[$scale_index]="${NOTESWITHFLATS[$index]}"
-          fi
-          index=$((index+1))
-        done
-      fi
-      scale_index=$((scale_index+1))
-    done
-  fi
-  
   echo ""
   echo "Current Settings:"
   echo "================="
-  echo "Root Note: $rootnote"
-  echo "Scale Type: $scaletype (${scale_alias[@]})"
   echo "Tuning: $tuning"
+  echo "Root Note: $rootnote"
+  echo "Scale Type: $scaletype"
+  echo "Scale Notes: ${scale[@]}"
   echo ""
 
   echo "Main menu"
@@ -135,7 +186,7 @@ function main_menu {
     "Change Root Note"\
     "Change Scale Type"\
     Retune\
-    "Toggle: Show Sharp or Flat Notes. Currently showing $sharpflatdisplay ($NOTES)"\
+    "Toggle: Show Sharp or Flat Notes. Currently showing $sharpflatdisplay"\
     Quit; do
 
     case $choice in
@@ -154,10 +205,9 @@ function main_menu {
         retune_menu
 	break
         ;;
-"Toggle: Show Sharp or Flat Notes. Currently showing $sharpflatdisplay ($NOTES)")
+"Toggle: Show Sharp or Flat Notes. Currently showing $sharpflatdisplay")
         if [[ "$sharpflatdisplay" = "Sharps" ]]; then 
 	  sharpflatdisplay="Flats"
-
 	else
 	  sharpflatdisplay="Sharps"
 	fi
@@ -171,11 +221,13 @@ function main_menu {
           for val in ${NOTESWITHFLATS[@]}; do
             if [[ "$val" = "$rootnote" ]]; then
               rootnote="${NOTESWITHSHARPS[$index]}"
-	      sed -i 's/^ROOTNOTE=.*/ROOTNOTE=$rootnote/' $CONFIGFILE
+	      sed -i "s/^ROOTNOTE=.*/ROOTNOTE=$rootnote/" $CONFIGFILE
+	      cp $CONFIGFILE /tmp/a
 	      break
 	    fi
             index=$((index+1))   
 	  done
+          break
 	fi
 	
 	# Translate sharp root note to flat
@@ -185,13 +237,13 @@ function main_menu {
           for val in ${NOTESWITHSHARPS[@]}; do
             if [[ "$val" = "$rootnote" ]]; then
               rootnote="${NOTESWITHFLATS[$index]}"
-	      sed -i 's/^ROOTNOTE=.*/ROOTNOTE=$rootnote/' $CONFIGFILE
+	      sed -i "s/^ROOTNOTE=.*/ROOTNOTE=$rootnote/" $CONFIGFILE
 	      break
 	    fi
             index=$((index+1))   
 	  done
+    	  break
 	fi
-	break
 	;;
       Quit)
         exit 0
