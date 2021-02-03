@@ -23,11 +23,11 @@ DEFAULTROOTNOTE=C
 # Scale Types
 DEFAULTSCALETYPE="Major"
 SCALETYPES=(\
-  "Major (Ionian)"
-  "Major Pentatonic"
-  "Minor Pentatonic"\
+  "Major"
+  "Minor"
 )
 Major=(2 2 1 2 2 2 1)
+Minor=(2 1 2 2 1 2 2)
 
 function generate_scale {
   scaletype="$1"
@@ -167,7 +167,6 @@ function main_menu {
   sharpflatdisplay=`grep ^SHARPFLATDISPLAY $CONFIGFILE | sed 's/.*=//'`
   scaletype=`grep ^SCALETYPE $CONFIGFILE | sed 's/.*=//'`
   generate_scale "$rootnote" "$scaletype"
-  scale_suffix=`echo $scaletype | tr ' ' '_' | sed 's/(.*//'`
 
   echo ""
   echo "Current Settings:"
@@ -211,7 +210,7 @@ function main_menu {
 	else
 	  sharpflatdisplay="Sharps"
 	fi
-        sed -i "s/^SHARPFLATDISPLAY=.*/SHARPFLATDISPLAY=$sharpflatdisplay/" $CONFIGFILE 2> /tmp/b
+        sed -i "s/^SHARPFLATDISPLAY=.*/SHARPFLATDISPLAY=$sharpflatdisplay/" $CONFIGFILE
 	choose_notes
 
 	# Translate flat root note to sharp
@@ -222,7 +221,6 @@ function main_menu {
             if [[ "$val" = "$rootnote" ]]; then
               rootnote="${NOTESWITHSHARPS[$index]}"
 	      sed -i "s/^ROOTNOTE=.*/ROOTNOTE=$rootnote/" $CONFIGFILE
-	      cp $CONFIGFILE /tmp/a
 	      break
 	    fi
             index=$((index+1))   
