@@ -23,14 +23,16 @@ DEFAULTROOTNOTE=C
 # Scale Types
 DEFAULTSCALETYPE="Natural Major"
 SCALETYPES=(\
-  "Natural Major"
-  "Natural Minor"
   "Major Pentatonic"
   "Minor Pentatonic"
+  "Mixolydian"
+  "Natural Major"
+  "Natural Minor"
 )
-Natural_Major=(2 2 1 2 2 2 1)
 Natural_Minor=(2 1 2 2 1 2 2)
 Major_Pentatonic=(2 2 3 2)
+Mixolydian=(2 2 1 2 2 1)
+Natural_Major=(2 2 1 2 2 2 1)
 Minor_Pentatonic=(3 2 2 3)
 
 function generate_scale {
@@ -139,27 +141,19 @@ function choose_notes {
 function scale_type_menu {
   clear
   echo "Reference:"
-  echo "Major Scales"
-  echo "============"
+  echo "=========="
   echo "Major scales have a major third which makes them feel happy or bright."
   echo "Major scales include: Natural Major, Mixolydian, Lydian, Lydian Dominant, Phrygian Dominant, Harmonic Major, iand Mixolydian b6."
   echo ""
-  echo "Minor Scales"
-  echo "============"
   echo "Minor scales have a flat third which gives them a darker and more tragic feel."
   echo "Minor scales include: Natural Minor, Dorian, Harmonic Minor, Melodic Minor, Phrygian, and Locrian"
   echo ""
-  echo "Neither Major nor Minor"
-  echo "======================="
-  echo "These include: Blues and Altered"
+  echo "Blues and Altered scales are neither major nor minor."
   echo ""
-  echo "Pentatonic Scales"
-  echo "================="
   echo "Pentatonic scales consist of five notes."
   echo "Pentatonic scales include: Major Pentatonic and Minor Pentatonic"
   echo ""
-  echo "Synthetic Scales" 
-  echo "================"
+  echo "Synthetic scales are based on regular, symmetric patterns."
   echo "Synthetic scales include: Chromatic, Whole Tone and Octatonic"
   echo "=========================================================================================================="
   echo ""
