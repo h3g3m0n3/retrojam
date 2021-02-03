@@ -12,9 +12,9 @@ NOTESWITHSHARPS=(A A# B C C# D D# E F F# G G#)
 # Tunings
 TUNING_PREFIX=Tuning_
 DEFAULTTUNING=Standard
-TUNINGS=(\
-  Standard\
-  "Drop D"\
+TUNINGS=(
+  "Standard"
+  "Drop D"
 )
 
 # Root Notes
@@ -22,18 +22,48 @@ DEFAULTROOTNOTE=C
 
 # Scale Types
 DEFAULTSCALETYPE="Natural Major"
-SCALETYPES=(\
+SCALETYPES=(
+  "Altered"
+  "Blues"
+  "Chromatic"
+  "Dorian"
+  "Harmonic Major"
+  "Harmonic Minor"
+  "Locrian"
+  "Lydian" 
+  "Lydian Dominant" 
   "Major Pentatonic"
+  "Melodic Minor"
   "Minor Pentatonic"
   "Mixolydian"
+  "Mixolydian b6"
   "Natural Major"
   "Natural Minor"
+  "Octatonic"
+  "Phrygian"
+  "Phrygian Dominant"
+  "Whole Tone"
 )
-Natural_Minor=(2 1 2 2 1 2 2)
+Altered=(1 2 1 2 2 2)
+Blues=(3 2 1 1 3)
+Chromatic=(1 1 1 1 1 1 1 1 1 1 1)
+Dorian=(2 1 2 2 2 1)
+Harmonic_Major=(2 2 1 2 1 3)
+Harmonic_Minor=(2 1 2 2 1 3)
+Locrian=(1 2 2 1 2 2)
+Lydian=(2 2 2 1 2 2)
+Lydian_Dominant=(2 2 2 1 2 1)
 Major_Pentatonic=(2 2 3 2)
-Mixolydian=(2 2 1 2 2 1)
-Natural_Major=(2 2 1 2 2 2 1)
+Melodic_Minor=(2 1 2 2 2 2)
 Minor_Pentatonic=(3 2 2 3)
+Mixolydian=(2 2 1 2 2 1)
+Mixolydian_b6=(2 2 1 2 1 2)
+Natural_Major=(2 2 1 2 2 2 1)
+Natural_Minor=(2 1 2 2 1 2 2)
+Octatonic=(2 1 2 1 2 1 2)
+Phrygian=(1 2 2 2 1 2)
+Phrygian_Dominant=(1 3 1 2 1 2)
+Whole_Tone=(2 2 2 2 2)
 
 function generate_scale {
   scaletype="$1"
