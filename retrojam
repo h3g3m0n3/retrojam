@@ -117,11 +117,15 @@ function show_fretboard {
   echo "0 |-------1|-------2|-------3|-------4|-------5|-------6|-------7|-------8|-------9|------10|------11|------"
   echo ""
   for string in ${tuning_alias[@]}; do
-    echo "$string" | grep '#\|b' > /dev/null
-    if [ $? -eq 0 ]; then
-      line="$string|------"
+    if [[ "${scale[@]}" =~ "$string" ]]; then
+      echo "$string" | grep '#\|b' > /dev/null
+      if [ $? -eq 0 ]; then
+        line="$string|------"
+      else
+        line="$string |------"
+      fi
     else
-      line="$string |------"
+      line="  |------"
     fi
     # Get index of the string's 0 fret in NOTES
     note_index=0
